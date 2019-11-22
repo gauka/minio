@@ -24,7 +24,6 @@ import {
 import { getCurrentBucket } from "../buckets/selectors"
 import { getCurrentPrefix, getCheckedList } from "./selectors"
 import * as alertActions from "../alert/actions"
-import * as bucketActions from "../buckets/actions"
 import {
   minioBrowserPrefix,
   SORT_BY_NAME,
@@ -33,6 +32,8 @@ import {
   SORT_ORDER_ASC,
   SORT_ORDER_DESC
 } from "../constants"
+import { getServerInfo } from '../browser/selectors'
+import copy from 'copy-to-clipboard'
 
 export const SET_LIST = "objects/SET_LIST"
 export const RESET_LIST = "objects/RESET_LIST"
@@ -393,4 +394,20 @@ const downloadZip = (url, req, dispatch) => {
     }
   }
   xhr.send(JSON.stringify(req))
+}
+
+export const copyObjectURL = (object) => {
+  return function(dispatch, getState) {
+    const currentBucket = getCurrentBucket(getState())
+    const currentPrefix = getCurrentPrefix(getState())
+    const domains = getServerInfo(getState()).info.domains
+
+    const objectUrl = `https://${domains[0]}/${currentBucket}/${currentPrefix}${object.name}`
+
+    copy(encodeURI(objectUrl))
+    dispatch(alertActions.set({
+      type: "success",
+      message: "Link copied to clipboard!"
+    }))
+  }
 }

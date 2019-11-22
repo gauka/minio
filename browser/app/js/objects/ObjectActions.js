@@ -25,6 +25,7 @@ import {
   SHARE_OBJECT_EXPIRY_HOURS,
   SHARE_OBJECT_EXPIRY_MINUTES
 } from "../constants"
+import { hasServerPublicDomain } from '../browser/selectors'
 
 export class ObjectActions extends React.Component {
   constructor(props) {
@@ -32,6 +33,12 @@ export class ObjectActions extends React.Component {
     this.state = {
       showDeleteConfirmation: false
     }
+    this.copyObjectURL = this.copyObjectURL.bind(this)
+  }
+  copyObjectURL(e) {
+    e.preventDefault()
+    const { object, copyObjectURL } = this.props
+    copyObjectURL(object)
   }
   shareObject(e) {
     e.preventDefault()
@@ -57,11 +64,20 @@ export class ObjectActions extends React.Component {
     })
   }
   render() {
-    const { object, showShareObjectModal, shareObjectName } = this.props
+    const { object, showShareObjectModal, shareObjectName, hasServerPublicDomain } = this.props
     return (
       <Dropdown id={`obj-actions-${object.name}`}>
         <Dropdown.Toggle noCaret className="fia-toggle" />
         <Dropdown.Menu>
+          {hasServerPublicDomain && (
+            <a
+              href=""
+              className="fiad-action"
+              onClick={this.copyObjectURL}
+            >
+              <i className="fas fa-copy" />
+            </a>
+          )}
           <a
             href=""
             className="fiad-action"
@@ -94,7 +110,8 @@ const mapStateToProps = (state, ownProps) => {
   return {
     object: ownProps.object,
     showShareObjectModal: state.objects.shareObject.show,
-    shareObjectName: state.objects.shareObject.object
+    shareObjectName: state.objects.shareObject.object,
+    hasServerPublicDomain: hasServerPublicDomain(state),
   }
 }
 
@@ -102,7 +119,8 @@ const mapDispatchToProps = dispatch => {
   return {
     shareObject: (object, days, hours, minutes) =>
       dispatch(objectsActions.shareObject(object, days, hours, minutes)),
-    deleteObject: object => dispatch(objectsActions.deleteObject(object))
+    deleteObject: object => dispatch(objectsActions.deleteObject(object)),
+    copyObjectURL: object => dispatch(objectsActions.copyObjectURL(object)),
   }
 }
 
