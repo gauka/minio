@@ -32,7 +32,7 @@ import {
   SORT_ORDER_ASC,
   SORT_ORDER_DESC
 } from "../constants"
-import { getServerInfo } from '../browser/selectors'
+import { hasServerPublicDomain, getServerInfo } from '../browser/selectors'
 import copy from 'copy-to-clipboard'
 
 export const SET_LIST = "objects/SET_LIST"
@@ -64,7 +64,7 @@ export const setListLoading = listLoading => ({
 })
 
 export const fetchObjects = () => {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch(resetList())
     const {
       buckets: { currentBucket },
@@ -87,9 +87,16 @@ export const fetchObjects = () => {
             let objects = []
             if (res.objects) {
               objects = res.objects.map(object => {
+                const name = object.name.replace(currentPrefix, "")
+                let objectUrl
+                if (hasServerPublicDomain(getState())) {
+                  const domain = getServerInfo(getState()).info.domains[0]
+                  objectUrl = `https://${domain}/${currentBucket}/${currentPrefix}${name}`
+                }
                 return {
                   ...object,
-                  name: object.name.replace(currentPrefix, "")
+                  name,
+                  objectUrl,
                 }
               })
             }
@@ -396,14 +403,8 @@ const downloadZip = (url, req, dispatch) => {
   xhr.send(JSON.stringify(req))
 }
 
-export const copyObjectURL = (object) => {
-  return function(dispatch, getState) {
-    const currentBucket = getCurrentBucket(getState())
-    const currentPrefix = getCurrentPrefix(getState())
-    const domains = getServerInfo(getState()).info.domains
-
-    const objectUrl = `https://${domains[0]}/${currentBucket}/${currentPrefix}${object.name}`
-
+export const copyObjectURL = ({ objectUrl }) => {
+  return function (dispatch) {
     copy(encodeURI(objectUrl))
     dispatch(alertActions.set({
       type: "success",

@@ -22,51 +22,81 @@ import { getDataType } from "../mime"
 import * as actions from "./actions"
 import { getCheckedList } from "./selectors"
 
-export const ObjectItem = ({
-  name,
-  contentType,
-  size,
-  lastModified,
-  checked,
-  checkObject,
-  uncheckObject,
-  actionButtons,
-  onClick
-}) => {
-  return (
-    <div className={"fesl-row"} data-type={getDataType(name, contentType)}>
-      <div className="fesl-item fesl-item-icon">
-        <div className="fi-select">
-          <input
-            type="checkbox"
-            name={name}
-            checked={checked}
-            onChange={() => {
-              checked ? uncheckObject(name) : checkObject(name)
-            }}
+export class ObjectItem extends React.PureComponent {
+  constructor(props) {
+    super(props)
+    const { name, contentType } = props
+    this.state = {
+      previewBlockIsVisible: false,
+    }
+    this.setPreviewImage = this.setPreviewImage.bind(this)
+    this.dataType = getDataType(name, contentType)
+    this.isImage = this.dataType === 'image'
+  }
+
+  setPreviewImage(value) {
+    const { objectUrl } = this.props
+    if (!objectUrl) return
+    this.setState({ previewBlockIsVisible: value })
+  }
+
+  render() {
+    const {
+      name,
+      size,
+      lastModified,
+      checked,
+      checkObject,
+      uncheckObject,
+      actionButtons,
+      onClick,
+      objectUrl,
+    } = this.props
+    const { previewBlockIsVisible } = this.state
+    return (
+      <div className={"fesl-row"} data-type={this.dataType}>
+        {previewBlockIsVisible && 
+          <img
+            className="preview"
+            src={objectUrl}
           />
-          <i className="fis-icon" />
-          <i className="fis-helper" />
-        </div>
-      </div>
-      <div className="fesl-item fesl-item-name">
-        <a
-          href={getDataType(name, contentType) === "folder" ? name : "#"}
-          onClick={e => {
-            e.preventDefault()
-            if (onClick) {
-              onClick()
-            }
-          }}
+        }
+        <div className="fesl-item fesl-item-icon" 
+          onMouseOver={() => this.isImage ? this.setPreviewImage(true) : null}
+          onMouseLeave={() => this.isImage ? this.setPreviewImage(false) : null}
         >
-          {name}
-        </a>
+          <div className="fi-select">
+            <input
+              type="checkbox"
+              name={name}
+              checked={checked}
+              onChange={() => {
+                checked ? uncheckObject(name) : checkObject(name)
+              }}
+            />
+            <i className="fis-icon" />
+            <i className="fis-helper" />
+          </div>
+        </div>
+        <div className="fesl-item fesl-item-name">
+          <a
+            href={this.dataType === "folder" ? name : "#"}
+            onClick={e => {
+              e.preventDefault()
+              if (onClick) {
+                onClick()
+              }
+            }}
+          >
+            {name}
+          </a>
+        </div>
+        <div className="fesl-item fesl-item-size">{size}</div>
+        <div className="fesl-item fesl-item-modified">{lastModified}</div>
+        <div className="fesl-item fesl-item-actions">{actionButtons}</div>
       </div>
-      <div className="fesl-item fesl-item-size">{size}</div>
-      <div className="fesl-item fesl-item-modified">{lastModified}</div>
-      <div className="fesl-item fesl-item-actions">{actionButtons}</div>
-    </div>
-  )
+    )
+  }
 }
 
 const mapStateToProps = (state, ownProps) => {
